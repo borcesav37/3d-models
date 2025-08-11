@@ -1,0 +1,3207 @@
+/* EMERGENCY FIX: No animation class for stable interaction */
+        .no-anim {
+            transition: none !important;
+            animation: none !important;
+        }
+
+        /* CRITICAL FIX: Required CSS for right panel editor */
+        #designPreviewContainer { 
+            position: relative; 
+            width: 100%; 
+            height: 200px; 
+        }
+        #designPreviewCanvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+        }
+        #designElementsLayer { 
+            position: absolute; 
+            inset: 0; 
+            pointer-events: none; 
+        }
+        #designElementsLayer .design-element { 
+            position: absolute; 
+            pointer-events: auto; 
+            user-select: none; 
+            touch-action: none; 
+        }
+
+        .right-panel-preview { 
+            padding: 8px 8px 12px 8px; 
+        }
+
+        .preview-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 397 / 180;       /* stable height */
+            border: 1px dashed #cfd4dc;
+            border-radius: 8px;
+            background: #f8fafc;
+            overflow: hidden;
+        }
+
+        #designPreviewCanvas {
+            position: absolute; 
+            inset: 0; 
+            display: block;
+            width: 100%; 
+            height: 100%; 
+            z-index: 1;
+        }
+
+        .design-elements-layer {
+            position: absolute; 
+            inset: 0; 
+            z-index: 2;
+            pointer-events: none;           /* the layer blocks nothing */
+        }
+        .design-elements-layer .design-element {
+            position: absolute; 
+            pointer-events: auto; /* elements are clickable/draggable */
+            user-select: none; 
+            touch-action: none; 
+            cursor: grab;
+            transform-origin: center center;
+            border: 2px solid transparent;
+        }
+        .design-elements-layer .design-element.selected { 
+            border-color: #3b82f6; 
+        }
+
+        /* Ana uygulama kapsayıcısı: WordPress CSS çakışmalarını önlemek için */
+        /* Tüm stiller bu kapsayıcı sınıfı altında tanımlanır */
+        .mydesigner-wrapper {
+            all: initial; /* Tüm miras alınan CSS özelliklerini sıfırla */
+            display: block; /* Blok element gibi davranmasını sağla */
+            font-family: -apple-system, BlinkMacMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Temel fontu yeniden uygula */
+            line-height: 1.4;
+            color: #333;
+            background: transparent;
+            position: relative; /* İçindeki absolute konumlandırma için gerekli */
+            z-index: 1; /* Diğer WordPress içeriğinin üzerinde olmasını sağla */
+            width: 100%; /* Kapsayıcıya göre tam genişlik */
+            height: 800px; /* Sabit bir yükseklik, ihtiyaca göre ayarlanabilir */
+            overflow: hidden; /* İçerik taşmasını engelle */
+        }
+
+        /* Tüm iç elementler için kutu modelini border-box yap */
+        .mydesigner-wrapper * {
+            box-sizing: border-box;
+        }
+
+        /* Ana tasarım konteyneri: Grid yapısı ile panelleri düzenle */
+        /* Sol panel (300px), 3D alan (kalan tüm boşluk), Sağ panel (450px) */
+        .mydesigner-wrapper .designer-container {
+            width: 100%; /* Kapsayıcıya göre tam genişlik */
+            height: 100%; /* Kapsayıcıya göre tam yükseklik */
+            display: grid;
+            grid-template-columns: 300px 1fr 450px; /* Sol panel, 3D alan, Sağ panel */
+            position: relative; /* İçindeki absolute konumlandırma için */
+        }
+
+        /* Sol Panel Stilleri */
+        .mydesigner-wrapper .left-panel {
+            grid-column: 1; /* İlk sütuna yerleştir */
+            width: 300px; /* Grid tarafından belirleniyor ama burada da belirtmek iyi */
+            background: #ffffff;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu */
+        }
+
+        .mydesigner-wrapper .panel-section {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .mydesigner-wrapper .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Canvas Alanı (3D Modelin görüntülendiği yer) */
+        .mydesigner-wrapper .canvas-area {
+            grid-column: 2; /* İkinci sütuna yerleştir */
+            flex: 1; /* Kalan alanı kapla */
+            position: relative;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* CRITICAL FIX: Lower z-index to prevent blocking panels */
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        .mydesigner-wrapper #canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            /* CRITICAL FIX: Lower z-index to prevent blocking panels */
+            z-index: 1;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .mydesigner-wrapper #canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Tasarım Yükle Butonu Stilleri */
+        .mydesigner-wrapper .upload-design-btn {
+            width: 100%;
+            padding: 14px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mydesigner-wrapper .upload-design-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Arka Plan Seçenekleri Stilleri */
+        .mydesigner-wrapper .bg-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .mydesigner-wrapper .bg-option {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+
+        .mydesigner-wrapper .bg-option:hover {
+            transform: scale(1.05);
+        }
+
+        .mydesigner-wrapper .bg-option.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .mydesigner-wrapper .bg-solid {
+            background: var(--bg-color);
+        }
+
+        .mydesigner-wrapper .bg-gradient {
+            background: var(--bg-gradient);
+        }
+
+        /* Animasyon Kontrolleri Stilleri */
+        .mydesigner-wrapper .animation-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mydesigner-wrapper .animation-btn {
+            padding: 10px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mydesigner-wrapper .animation-btn:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+
+        .mydesigner-wrapper .animation-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        /* Renk Seçici Stilleri */
+        .mydesigner-wrapper .color-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .mydesigner-wrapper .color-option {
+            width: 35px;
+            height: 35px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .mydesigner-wrapper .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .mydesigner-wrapper .color-option.active {
+            border-color: #1f2937;
+        }
+
+        .mydesigner-wrapper .color-option.active::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* Dışa Aktar Butonu Stilleri */
+        .mydesigner-wrapper .export-btn {
+            width: 100%;
+            padding: 14px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mydesigner-wrapper .export-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* OPTIMIZED: Enhanced Right Panel with Performance Improvements */
+        .mydesigner-wrapper .new-design-panel {
+            grid-column: 3;
+            width: 450px;
+            background: #ffffff;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            /* CRITICAL FIX: Higher z-index to ensure panel is above canvas */
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            overflow-y: auto;
+            /* OPTIMIZED: Hardware acceleration for smooth scrolling */
+            transform: translateZ(0);
+            will-change: scroll-position;
+            /* OPTIMIZED: Smooth scrolling */
+            scroll-behavior: smooth;
+            /* OPTIMIZED: Better performance for complex layouts */
+            contain: layout style paint;
+            /* CRITICAL FIX: Ensure pointer events work */
+            pointer-events: auto;
+        }
+
+        /* OPTIMIZED: Enhanced panel header with better performance */
+        .mydesigner-wrapper .panel-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid rgba(255,255,255,0.2);
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .mydesigner-wrapper .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .mydesigner-wrapper .panel-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .mydesigner-wrapper .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* OPTIMIZED: Enhanced area tabs with better performance */
+        .mydesigner-wrapper .area-tabs-container {
+            padding: 15px 20px 0;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        .mydesigner-wrapper .area-tabs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .mydesigner-wrapper .area-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 8px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+            /* OPTIMIZED: Hardware acceleration for smooth transitions */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .mydesigner-wrapper .area-tab:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px) translateZ(0);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .mydesigner-wrapper .area-tab.active {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-color: #1d4ed8;
+            color: white;
+            transform: translateY(-2px) translateZ(0);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .mydesigner-wrapper .tab-icon {
+            font-size: 16px;
+            display: block;
+        }
+
+        .mydesigner-wrapper .tab-text {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* OPTIMIZED: Enhanced design workspace with better performance */
+        .mydesigner-wrapper .design-workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            background: #f8fafc;
+            min-height: 400px;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        /* OPTIMIZED: Enhanced canvas wrapper with better performance */
+        .mydesigner-wrapper .canvas-wrapper {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        .mydesigner-wrapper .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .mydesigner-wrapper .canvas-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            letter-spacing: 0.5px;
+        }
+
+        .mydesigner-wrapper .canvas-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mydesigner-wrapper .canvas-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .mydesigner-wrapper .canvas-btn:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            transform: scale(1.05);
+        }
+
+        /* OPTIMIZED: Enhanced canvas container with better performance */
+        .mydesigner-wrapper .canvas-container {
+            position: relative;
+            height: 250px;
+            background: #fafafa;
+            border-bottom: 1px solid #e2e8f0;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        /* PRODUCTION FIX: Mini preview wrapper with fixed height */
+        .mydesigner-wrapper #newCanvasContainer {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* PRODUCTION FIX: Canvas fills the box exactly */
+        .mydesigner-wrapper #designPreviewCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: 0;
+            margin: 0;
+            z-index: 1;
+        }
+
+        /* PRODUCTION FIX: Overlay sits exactly on top & is interactive via children */
+        .mydesigner-wrapper .design-elements-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            /* OPTIMIZED: Hardware acceleration for smooth interactions */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        /* PRODUCTION FIX: Design elements are top-left anchored and always visible */
+        .mydesigner-wrapper .design-elements-layer .design-element {
+            position: absolute;
+            pointer-events: auto;
+            touch-action: none;
+            user-select: none;
+            will-change: transform;
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform-origin: center center;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(1px);
+            
+            /* OPTIMIZED: Ensure visibility with hardware acceleration */
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 15 !important;
+            
+            /* OPTIMIZED: Hardware acceleration for smooth dragging */
+            transform: translateZ(0);
+            will-change: transform, opacity;
+            
+            /* Minimum size */
+            min-width: 20px !important;
+            min-height: 20px !important;
+        }
+
+        .mydesigner-wrapper .design-elements-layer .design-element:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+            transform: scale(1.02) translateZ(0);
+        }
+
+        .mydesigner-wrapper .design-elements-layer .design-element.selected {
+            border-color: #ef4444;
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+            transform: scale(1.05) translateZ(0);
+            z-index: 20 !important;
+        }
+
+        .mydesigner-wrapper .design-elements-layer .design-element img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            border-radius: 6px;
+            display: block !important;
+            visibility: visible !important;
+            /* OPTIMIZED: Hardware acceleration for images */
+            transform: translateZ(0);
+        }
+
+        /* OPTIMIZED: Enhanced elements panel with better performance */
+        .mydesigner-wrapper .elements-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            max-height: 200px;
+            display: flex;
+            flex-direction: column;
+            /* WORDPRESS FIX: Ensure panel is always clickable */
+            position: relative;
+            z-index: 1000;
+            pointer-events: auto;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        .mydesigner-wrapper .elements-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .mydesigner-wrapper .elements-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0;
+        }
+
+        .mydesigner-wrapper .elements-count {
+            font-size: 12px;
+            color: #6b7280;
+            background: #e5e7eb;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .mydesigner-wrapper .elements-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            /* OPTIMIZED: Smooth scrolling */
+            scroll-behavior: smooth;
+            /* CRITICAL FIX: Ensure proper z-index and pointer events */
+            z-index: 100;
+            pointer-events: auto;
+        }
+
+        .mydesigner-wrapper .no-elements-message {
+            text-align: center;
+            padding: 30px 20px;
+            color: #6b7280;
+        }
+
+        .mydesigner-wrapper .message-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .mydesigner-wrapper .no-elements-message p {
+            margin: 8px 0 4px;
+            font-weight: 500;
+        }
+
+        .mydesigner-wrapper .no-elements-message small {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        /* OPTIMIZED: Enhanced element item styling with better performance */
+        .mydesigner-wrapper .element-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 6px;
+            background: #f9fafb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform, background-color;
+        }
+
+        .mydesigner-wrapper .element-item:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            transform: translateY(-1px) translateZ(0);
+        }
+
+        .mydesigner-wrapper .element-item.selected {
+            background: #fef2f2;
+            border-color: #ef4444;
+            transform: translateY(-1px) translateZ(0);
+        }
+
+        .mydesigner-wrapper .element-thumbnail {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            object-fit: cover;
+            margin-right: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .mydesigner-wrapper .element-info {
+            flex: 1;
+        }
+
+        .mydesigner-wrapper .element-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 2px;
+        }
+
+        .mydesigner-wrapper .element-details {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        /* OPTIMIZED: Enhanced properties panel with better performance */
+        .mydesigner-wrapper .properties-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            margin-top: 15px;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        .mydesigner-wrapper .properties-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .mydesigner-wrapper .properties-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0;
+        }
+
+        .mydesigner-wrapper .selected-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .mydesigner-wrapper .indicator-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #d1d5db;
+        }
+
+        .mydesigner-wrapper .selected-indicator.active .indicator-dot {
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        .mydesigner-wrapper .selected-indicator.active .indicator-text {
+            color: #ef4444;
+            font-weight: 500;
+        }
+
+        .mydesigner-wrapper .properties-content {
+            padding: 16px;
+        }
+
+        .mydesigner-wrapper .no-selection-message {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .mydesigner-wrapper .properties-controls .control-group {
+            margin-bottom: 20px;
+        }
+
+        .mydesigner-wrapper .properties-controls .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .mydesigner-wrapper .label-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .mydesigner-wrapper .label-value {
+            font-size: 12px;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* OPTIMIZED: Enhanced control sliders with better performance */
+        .mydesigner-wrapper .control-slider.modern {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            /* OPTIMIZED: Hardware acceleration for smooth sliding */
+            transform: translateZ(0);
+        }
+
+        .mydesigner-wrapper .control-slider.modern::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            border: 2px solid white;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        .mydesigner-wrapper .control-slider.modern::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            border: 2px solid white;
+        }
+
+        /* OPTIMIZED: Enhanced control actions with better performance */
+        .mydesigner-wrapper .control-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .mydesigner-wrapper .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .mydesigner-wrapper .action-btn.delete {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        .mydesigner-wrapper .action-btn.delete:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            transform: translateY(-1px) translateZ(0);
+        }
+
+        .mydesigner-wrapper .action-btn.duplicate {
+            background: #f0f9ff;
+            color: #0369a1;
+            border-color: #bae6fd;
+        }
+
+        .mydesigner-wrapper .action-btn.duplicate:hover {
+            background: #e0f2fe;
+            border-color: #7dd3fc;
+            transform: translateY(-1px) translateZ(0);
+        }
+
+        /* OPTIMIZED: Enhanced text panel with better performance */
+        .mydesigner-wrapper .text-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            margin-top: 15px;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        .mydesigner-wrapper .text-header {
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .mydesigner-wrapper .text-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0;
+        }
+
+        .mydesigner-wrapper .text-controls {
+            padding: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .mydesigner-wrapper .text-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .mydesigner-wrapper .text-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .mydesigner-wrapper .text-add-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .mydesigner-wrapper .text-add-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px) translateZ(0);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* OPTIMIZED: Enhanced resize handles with better performance */
+        .mydesigner-wrapper .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: none;
+            cursor: pointer;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .mydesigner-wrapper .design-element.selected .resize-handle {
+            display: block;
+        }
+
+        /* OPTIMIZED: Enhanced delete handle with better performance */
+        .mydesigner-wrapper .delete-handle {
+            position: absolute;
+            top: -35px;
+            right: -6px;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .mydesigner-wrapper .design-element.selected .delete-handle {
+            display: flex;
+        }
+
+        .mydesigner-wrapper .delete-handle:hover {
+            background: #dc2626;
+            transform: scale(1.1) translateZ(0);
+        }
+
+        /* OPTIMIZED: Performance improvements for legacy elements */
+        .mydesigner-wrapper .design-element {
+            position: absolute !important;
+            cursor: move;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+            user-select: none;
+            transform-origin: center center;
+            display: block !important;
+            visibility: visible !important;
+            z-index: 10 !important;
+            pointer-events: auto !important;
+            min-width: 10px !important;
+            min-height: 10px !important;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform, opacity;
+        }
+
+        .mydesigner-wrapper .design-element.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .mydesigner-wrapper .design-element img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            display: block !important;
+            visibility: visible !important;
+            opacity: inherit;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+        }
+
+        /* OPTIMIZED: Enhanced loading state with better performance */
+        .mydesigner-wrapper .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            z-index: 1000;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translate(-50%, -50%) translateZ(0);
+        }
+
+        .mydesigner-wrapper .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f4f6;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* OPTIMIZED: Enhanced camera hint with better performance */
+        .mydesigner-wrapper .camera-hint {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0.8;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateX(-50%) translateZ(0);
+        }
+
+        /* OPTIMIZED: Enhanced zoom controls with better performance */
+        .mydesigner-wrapper .zoom-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 5px;
+            padding: 5px;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateX(-50%) translateZ(0);
+        }
+
+        .mydesigner-wrapper .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .mydesigner-wrapper .zoom-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .mydesigner-wrapper .zoom-btn:active {
+            transform: scale(0.95) translateZ(0);
+        }
+
+        /* OPTIMIZED: Enhanced layer items with better performance */
+        .mydesigner-wrapper .layer-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            /* OPTIMIZED: Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform, background-color;
+        }
+
+        .mydesigner-wrapper .layer-item:hover {
+            background: #f3f4f6;
+            transform: translateY(-1px) translateZ(0);
+        }
+
+        .mydesigner-wrapper .layer-item.active {
+            background: #dbeafe;
+            outline: 2px solid #3b82f6;
+            transform: translateY(-1px) translateZ(0);
+        }
+
+        .mydesigner-wrapper .layer-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-right: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .mydesigner-wrapper .layer-info {
+            flex: 1;
+        }
+
+        .mydesigner-wrapper .layer-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .mydesigner-wrapper .layer-type {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* OPTIMIZED: Enhanced responsive design with better performance */
+        @media (max-width: 1200px) {
+            .mydesigner-wrapper .designer-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            .mydesigner-wrapper .left-panel {
+                grid-column: 1;
+                grid-row: 1;
+                width: 100%;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .mydesigner-wrapper .canvas-area {
+                grid-column: 1;
+                grid-row: 2;
+                height: 500px;
+            }
+            .mydesigner-wrapper .design-panel {
+                grid-column: 1;
+                grid-row: 3;
+                width: 100%;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mydesigner-wrapper .left-panel {
+                width: 100%;
+            }
+            .mydesigner-wrapper .design-panel {
+                width: 100%;
+            }
+        }
+
+        /* OPTIMIZED: Enhanced accessibility and performance utilities */
+        .mydesigner-wrapper .hidden {
+            display: none !important;
+        }
+
+        .mydesigner-wrapper .sr-only {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+
+        /* ADVANCED: VirtualThreads.io-level performance optimizations */
+        
+        /* Ultra-smooth scrolling with hardware acceleration */
+        .mydesigner-wrapper .new-design-panel {
+            /* Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0);
+            will-change: scroll-position, transform;
+            /* Professional scrolling */
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+            /* Performance isolation */
+            contain: layout style paint;
+            /* Memory optimization */
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        
+        /* Enhanced scrollbar styling for better UX */
+        .mydesigner-wrapper .new-design-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .mydesigner-wrapper .new-design-panel::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        .mydesigner-wrapper .new-design-panel::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+        
+        .mydesigner-wrapper .new-design-panel::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Professional design element positioning */
+        .mydesigner-wrapper .design-elements-layer .design-element {
+            /* Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0);
+            will-change: transform, opacity, filter;
+            /* Professional positioning */
+            backface-visibility: hidden;
+            perspective: 1000px;
+            /* Smooth transitions */
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Professional shadows */
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element:hover {
+            transform: translate3d(0, -2px, 0) scale(1.02);
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element.selected {
+            transform: translate3d(0, -4px, 0) scale(1.05);
+            filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3));
+        }
+        
+        /* Professional control handles */
+        .mydesigner-wrapper .resize-handle {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        .mydesigner-wrapper .resize-handle:hover {
+            transform: translate3d(0, 0, 0) scale(1.2);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+        
+        /* Professional delete handle */
+        .mydesigner-wrapper .delete-handle {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        .mydesigner-wrapper .delete-handle:hover {
+            transform: translate3d(0, 0, 0) scale(1.15);
+            filter: drop-shadow(0 4px 8px rgba(239, 68, 68, 0.4));
+        }
+        
+        /* Professional area tabs */
+        .mydesigner-wrapper .area-tab {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, box-shadow;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .area-tab:hover {
+            transform: translate3d(0, -3px, 0);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+        }
+        
+        .mydesigner-wrapper .area-tab.active {
+            transform: translate3d(0, -3px, 0);
+            box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4);
+        }
+        
+        /* Professional element items */
+        .mydesigner-wrapper .element-item {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, border-color;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .element-item:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .element-item.selected {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Professional action buttons */
+        .mydesigner-wrapper .action-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, box-shadow;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .action-btn:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .mydesigner-wrapper .action-btn:active {
+            transform: translate3d(0, 0px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* Professional control sliders */
+        .mydesigner-wrapper .control-slider.modern {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            transition: all 0.15s ease;
+        }
+        
+        .mydesigner-wrapper .control-slider.modern::-webkit-slider-thumb {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .mydesigner-wrapper .control-slider.modern::-webkit-slider-thumb:hover {
+            transform: translate3d(0, 0, 0) scale(1.2);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .mydesigner-wrapper .control-slider.modern::-webkit-slider-thumb:active {
+            transform: translate3d(0, 0, 0) scale(1.1);
+        }
+        
+        /* Professional text input */
+        .mydesigner-wrapper .text-input {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, border-color, box-shadow;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .text-input:focus {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+        }
+        
+        /* Professional text add button */
+        .mydesigner-wrapper .text-add-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .text-add-btn:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+        
+        .mydesigner-wrapper .text-add-btn:active {
+            transform: translate3d(0, 0px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* Professional canvas buttons */
+        .mydesigner-wrapper .canvas-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, border-color;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .canvas-btn:hover {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .canvas-btn:active {
+            transform: translate3d(0, 0px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* Professional zoom controls */
+        .mydesigner-wrapper .zoom-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .zoom-btn:hover {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .zoom-btn:active {
+            transform: translate3d(0, 0px, 0) scale(0.95);
+            transition: all 0.05s ease;
+        }
+        
+        /* Professional layer items */
+        .mydesigner-wrapper .layer-item {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, border-color;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+        }
+        
+        .mydesigner-wrapper .layer-item:hover {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .layer-item.active {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
+        }
+        
+        /* Professional loading animation */
+        .mydesigner-wrapper .spinner {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: translate3d(0, 0, 0) rotate(0deg); }
+            to { transform: translate3d(0, 0, 0) rotate(360deg); }
+        }
+        
+        /* Professional pulse animation */
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+            50% { 
+                opacity: 0.5;
+                transform: translate3d(0, 0, 0) scale(1.05);
+            }
+        }
+        
+        /* Professional status indicator */
+        .mydesigner-wrapper .status-indicator {
+            transform: translate3d(0, 0, 0);
+            will-change: opacity, transform;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Professional selected indicator */
+        .mydesigner-wrapper .selected-indicator.active .indicator-dot {
+            transform: translate3d(0, 0, 0);
+            will-change: opacity, transform;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Performance-focused utility classes */
+        .mydesigner-wrapper .gpu-accelerated {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        
+        .mydesigner-wrapper .smooth-transition {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .mydesigner-wrapper .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        .mydesigner-wrapper .performance-optimized {
+            contain: layout style paint;
+            will-change: auto;
+        }
+        
+        .mydesigner-wrapper .interaction-ready {
+            pointer-events: auto;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        
+        /* Professional focus states */
+        .mydesigner-wrapper *:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        .mydesigner-wrapper *:focus:not(:focus-visible) {
+            outline: none;
+        }
+        
+        /* Professional hover states for touch devices */
+        @media (hover: none) {
+            .mydesigner-wrapper .design-elements-layer .design-element:hover,
+            .mydesigner-wrapper .area-tab:hover,
+            .mydesigner-wrapper .element-item:hover,
+            .mydesigner-wrapper .action-btn:hover,
+            .mydesigner-wrapper .text-add-btn:hover,
+            .mydesigner-wrapper .canvas-btn:hover,
+            .mydesigner-wrapper .zoom-btn:hover,
+            .mydesigner-wrapper .layer-item:hover {
+                transform: none;
+                box-shadow: none;
+            }
+        }
+        
+        /* Professional responsive optimizations */
+        @media (max-width: 1200px) {
+            .mydesigner-wrapper .design-elements-layer .design-element {
+                transition: all 0.1s ease; /* Faster transitions on mobile */
+            }
+            
+            .mydesigner-wrapper .area-tab {
+                transition: all 0.1s ease;
+            }
+        }
+        
+        /* Professional print styles */
+        @media print {
+            .mydesigner-wrapper .new-design-panel {
+                display: none;
+            }
+            
+            .mydesigner-wrapper .left-panel {
+                display: none;
+            }
+            
+            .mydesigner-wrapper .canvas-area {
+                width: 100%;
+                height: 100vh;
+            }
+        }
+        
+        /* CRITICAL FIXES: Enhanced interaction and performance optimizations */
+        
+        /* Ultra-responsive right panel with zero lag */
+        .mydesigner-wrapper .new-design-panel {
+            /* CRITICAL FIXES: Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0);
+            will-change: scroll-position, transform;
+            /* CRITICAL FIXES: Professional scrolling */
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+            /* CRITICAL FIXES: Performance isolation */
+            contain: layout style paint;
+            /* CRITICAL FIXES: Memory optimization */
+            backface-visibility: hidden;
+            perspective: 1000px;
+            /* CRITICAL FIXES: Prevent interaction blocking */
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        /* CRITICAL FIXES: Enhanced design element interaction */
+        .mydesigner-wrapper .design-elements-layer .design-element {
+            /* CRITICAL FIXES: Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0);
+            will-change: transform, opacity, filter;
+            /* CRITICAL FIXES: Professional positioning */
+            backface-visibility: hidden;
+            perspective: 1000px;
+            /* CRITICAL FIXES: Smooth transitions */
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            /* CRITICAL FIXES: Professional shadows */
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: none;
+            /* CRITICAL FIXES: Prevent interaction blocking */
+            pointer-events: auto;
+            position: absolute;
+            z-index: 10;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element:hover {
+            transform: translate3d(0, -2px, 0) scale(1.02);
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+            cursor: grabbing;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element.selected {
+            transform: translate3d(0, -4px, 0) scale(1.05);
+            filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3));
+            z-index: 1000;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element:active {
+            transform: translate3d(0, -1px, 0) scale(1.01);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced control handles for better interaction */
+        .mydesigner-wrapper .resize-handle {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: nw-resize;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: none;
+            pointer-events: auto;
+            z-index: 1001;
+        }
+        
+        .mydesigner-wrapper .resize-handle:hover {
+            transform: translate3d(0, 0, 0) scale(1.3);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            background-color: #3b82f6;
+        }
+        
+        .mydesigner-wrapper .resize-handle:active {
+            transform: translate3d(0, 0, 0) scale(1.2);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced delete handle */
+        .mydesigner-wrapper .delete-handle {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: none;
+            pointer-events: auto;
+            z-index: 1001;
+        }
+        
+        .mydesigner-wrapper .delete-handle:hover {
+            transform: translate3d(0, 0, 0) scale(1.2);
+            filter: drop-shadow(0 4px 8px rgba(239, 68, 68, 0.4));
+            background-color: #ef4444;
+        }
+        
+        .mydesigner-wrapper .delete-handle:active {
+            transform: translate3d(0, 0, 0) scale(1.1);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced area tabs for better responsiveness */
+        .mydesigner-wrapper .area-tab {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, box-shadow;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .area-tab:hover {
+            transform: translate3d(0, -3px, 0);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+        }
+        
+        .mydesigner-wrapper .area-tab.active {
+            transform: translate3d(0, -3px, 0);
+            box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4);
+        }
+        
+        .mydesigner-wrapper .area-tab:active {
+            transform: translate3d(0, -1px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced element items for better selection */
+        .mydesigner-wrapper .element-item {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, border-color;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .element-item:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .element-item.selected {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.2);
+            border-color: #ef4444;
+        }
+        
+        .mydesigner-wrapper .element-item:active {
+            transform: translate3d(0, -1px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced action buttons for better feedback */
+        .mydesigner-wrapper .action-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, box-shadow;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .action-btn:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .mydesigner-wrapper .action-btn:active {
+            transform: translate3d(0, 0px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced control sliders for better responsiveness */
+        .mydesigner-wrapper .control-slider.modern {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            transition: all 0.12s ease;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .control-slider.modern::-webkit-slider-thumb {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .mydesigner-wrapper .control-slider.modern::-webkit-slider-thumb:hover {
+            transform: translate3d(0, 0, 0) scale(1.3);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .mydesigner-wrapper .control-slider.modern::-webkit-slider-thumb:active {
+            transform: translate3d(0, 0, 0) scale(1.2);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced text input for better interaction */
+        .mydesigner-wrapper .text-input {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, border-color, box-shadow;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: text;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .text-input:focus {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+        }
+        
+        /* CRITICAL FIXES: Enhanced text add button */
+        .mydesigner-wrapper .text-add-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, box-shadow;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .text-add-btn:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+        
+        .mydesigner-wrapper .text-add-btn:active {
+            transform: translate3d(0, 0px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced canvas buttons */
+        .mydesigner-wrapper .canvas-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, border-color;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .canvas-btn:hover {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .canvas-btn:active {
+            transform: translate3d(0, 0px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced zoom controls */
+        .mydesigner-wrapper .zoom-btn {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .zoom-btn:hover {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .zoom-btn:active {
+            transform: translate3d(0, 0px, 0) scale(0.95);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Enhanced layer items */
+        .mydesigner-wrapper .layer-item {
+            transform: translate3d(0, 0, 0);
+            will-change: transform, background-color, border-color;
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+            backface-visibility: hidden;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+        
+        .mydesigner-wrapper .layer-item:hover {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mydesigner-wrapper .layer-item.active {
+            transform: translate3d(0, -1px, 0);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
+        }
+        
+        .mydesigner-wrapper .layer-item:active {
+            transform: translate3d(0, 0px, 0);
+            transition: all 0.05s ease;
+        }
+        
+        /* CRITICAL FIXES: Performance-focused utility classes */
+        .mydesigner-wrapper .gpu-accelerated {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        
+        .mydesigner-wrapper .smooth-transition {
+            transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .mydesigner-wrapper .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        .mydesigner-wrapper .performance-optimized {
+            contain: layout style paint;
+            will-change: auto;
+        }
+        
+        .mydesigner-wrapper .interaction-ready {
+            pointer-events: auto;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        
+        /* CRITICAL FIXES: Professional focus states */
+        .mydesigner-wrapper *:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        .mydesigner-wrapper *:focus:not(:focus-visible) {
+            outline: none;
+        }
+        
+        /* CRITICAL FIXES: Professional hover states for touch devices */
+        @media (hover: none) {
+            .mydesigner-wrapper .design-elements-layer .design-element:hover,
+            .mydesigner-wrapper .area-tab:hover,
+            .mydesigner-wrapper .element-item:hover,
+            .mydesigner-wrapper .action-btn:hover,
+            .mydesigner-wrapper .text-add-btn:hover,
+            .mydesigner-wrapper .canvas-btn:hover,
+            .mydesigner-wrapper .zoom-btn:hover,
+            .mydesigner-wrapper .layer-item:hover {
+                transform: none;
+                box-shadow: none;
+            }
+        }
+        
+        /* CRITICAL FIXES: Professional responsive optimizations */
+        @media (max-width: 1200px) {
+            .mydesigner-wrapper .design-elements-layer .design-element {
+                transition: all 0.08s ease; /* Faster transitions on mobile */
+            }
+            
+            .mydesigner-wrapper .area-tab {
+                transition: all 0.08s ease;
+            }
+            
+            .mydesigner-wrapper .action-btn {
+                transition: all 0.08s ease;
+            }
+        }
+        
+        /* CRITICAL FIXES: Professional print styles */
+        @media print {
+            .mydesigner-wrapper .new-design-panel {
+                display: none;
+            }
+            
+            .mydesigner-wrapper .left-panel {
+                display: none;
+            }
+            
+            .mydesigner-wrapper .canvas-area {
+                width: 100%;
+                height: 100vh;
+            }
+        }
+        
+        /* CRITICAL FIXES: Loading and status indicators */
+        .mydesigner-wrapper .spinner {
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: translate3d(0, 0, 0) rotate(0deg); }
+            to { transform: translate3d(0, 0, 0) rotate(360deg); }
+        }
+        
+        /* CRITICAL FIXES: Pulse animation for status indicators */
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+            50% { 
+                opacity: 0.5;
+                transform: translate3d(0, 0, 0) scale(1.05);
+            }
+        }
+        
+        /* CRITICAL FIXES: Professional status indicator */
+        .mydesigner-wrapper .status-indicator {
+            transform: translate3d(0, 0, 0);
+            will-change: opacity, transform;
+            animation: pulse 2s infinite;
+        }
+        
+        /* CRITICAL FIXES: Professional selected indicator */
+        .mydesigner-wrapper .selected-indicator.active .indicator-dot {
+            transform: translate3d(0, 0, 0);
+            will-change: opacity, transform;
+            animation: pulse 2s infinite;
+        }
+
+        /* CRITICAL FIXES: Element visibility and performance optimization */
+        
+        /* Enhanced element visibility with forced rendering */
+        .mydesigner-wrapper .design-elements-layer .design-element {
+            /* CRITICAL FIXES: Force visibility and positioning */
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: absolute !important;
+            z-index: 1000 !important;
+            /* CRITICAL FIXES: Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform, opacity, filter !important;
+            /* CRITICAL FIXES: Professional positioning */
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+            /* CRITICAL FIXES: Smooth transitions */
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            /* CRITICAL FIXES: Professional shadows */
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) !important;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: grab !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            touch-action: none !important;
+            /* CRITICAL FIXES: Prevent interaction blocking */
+            pointer-events: auto !important;
+            /* CRITICAL FIXES: Force rendering */
+            contain: layout style paint !important;
+            /* CRITICAL FIXES: Prevent layout shifts */
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element:hover {
+            transform: translate3d(0, -2px, 0) scale(1.02) !important;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15)) !important;
+            cursor: grabbing !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element.selected {
+            transform: translate3d(0, -4px, 0) scale(1.05) !important;
+            filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3)) !important;
+            z-index: 1001 !important;
+            border: 2px solid #ef4444 !important;
+            border-radius: 4px !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element:active {
+            transform: translate3d(0, -1px, 0) scale(1.01) !important;
+            transition: all 0.05s ease !important;
+        }
+        
+        /* CRITICAL FIXES: Enhanced control handles for better interaction */
+        .mydesigner-wrapper .resize-handle {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform, background-color !important;
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: nw-resize !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            touch-action: none !important;
+            pointer-events: auto !important;
+            z-index: 1002 !important;
+            /* CRITICAL FIXES: Force visibility */
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .mydesigner-wrapper .resize-handle:hover {
+            transform: translate3d(0, 0, 0) scale(1.3) !important;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) !important;
+            background-color: #3b82f6 !important;
+        }
+        
+        .mydesigner-wrapper .resize-handle:active {
+            transform: translate3d(0, 0, 0) scale(1.2) !important;
+            transition: all 0.05s ease !important;
+        }
+        
+        /* CRITICAL FIXES: Enhanced delete handle */
+        .mydesigner-wrapper .delete-handle {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform, background-color !important;
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            touch-action: none !important;
+            pointer-events: auto !important;
+            z-index: 1002 !important;
+            /* CRITICAL FIXES: Force visibility */
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .mydesigner-wrapper .delete-handle:hover {
+            transform: translate3d(0, 0, 0) scale(1.2) !important;
+            filter: drop-shadow(0 4px 8px rgba(239, 68, 68, 0.4)) !important;
+            background-color: #ef4444 !important;
+        }
+        
+        .mydesigner-wrapper .delete-handle:active {
+            transform: translate3d(0, 0, 0) scale(1.1) !important;
+            transition: all 0.05s ease !important;
+        }
+        
+        /* CRITICAL FIXES: Ultra-responsive right panel with zero lag */
+        .mydesigner-wrapper .new-design-panel {
+            /* CRITICAL FIXES: Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0) !important;
+            will-change: scroll-position, transform !important;
+            /* CRITICAL FIXES: Professional scrolling */
+            scroll-behavior: smooth !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: #cbd5e1 #f1f5f9 !important;
+            /* CRITICAL FIXES: Performance isolation */
+            contain: layout style paint !important;
+            /* CRITICAL FIXES: Memory optimization */
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+            /* CRITICAL FIXES: Prevent interaction blocking */
+            pointer-events: auto !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            /* CRITICAL FIXES: Force rendering */
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* CRITICAL FIXES: Enhanced design elements layer */
+        .mydesigner-wrapper .design-elements-layer {
+            /* CRITICAL FIXES: Force visibility and positioning */
+            position: relative !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            /* CRITICAL FIXES: Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform !important;
+            /* CRITICAL FIXES: Performance optimization */
+            contain: layout style paint !important;
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+            /* CRITICAL FIXES: Prevent interaction blocking */
+            pointer-events: auto !important;
+            /* CRITICAL FIXES: Force rendering */
+            z-index: 100 !important;
+        }
+        
+        /* CRITICAL FIXES: Enhanced preview canvas */
+        .mydesigner-wrapper #designPreviewCanvas {
+            /* CRITICAL FIXES: Force visibility and positioning */
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            /* CRITICAL FIXES: Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform !important;
+            /* CRITICAL FIXES: Performance optimization */
+            contain: layout style paint !important;
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+            /* CRITICAL FIXES: Prevent interaction blocking */
+            pointer-events: auto !important;
+            /* CRITICAL FIXES: Force rendering */
+            z-index: 50 !important;
+            /* CRITICAL FIXES: Prevent layout shifts */
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* CRITICAL FIXES: Enhanced area tabs for better responsiveness */
+        .mydesigner-wrapper .area-tab {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform, background-color, box-shadow !important;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            backface-visibility: hidden !important;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            touch-action: manipulation !important;
+            pointer-events: auto !important;
+            /* CRITICAL FIXES: Force visibility */
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .mydesigner-wrapper .area-tab:hover {
+            transform: translate3d(0, -3px, 0) !important;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        .mydesigner-wrapper .area-tab.active {
+            transform: translate3d(0, -3px, 0) !important;
+            box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4) !important;
+        }
+        
+        .mydesigner-wrapper .area-tab:active {
+            transform: translate3d(0, -1px, 0) !important;
+            transition: all 0.05s ease !important;
+        }
+        
+        /* CRITICAL FIXES: Enhanced element items for better selection */
+        .mydesigner-wrapper .element-item {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform, background-color, border-color !important;
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            backface-visibility: hidden !important;
+            /* CRITICAL FIXES: Interaction optimization */
+            cursor: pointer !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            touch-action: manipulation !important;
+            pointer-events: auto !important;
+            /* CRITICAL FIXES: Force visibility */
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .mydesigner-wrapper .element-item:hover {
+            transform: translate3d(0, -2px, 0) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .mydesigner-wrapper .element-item.selected {
+            transform: translate3d(0, -2px, 0) !important;
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.2) !important;
+            border-color: #ef4444 !important;
+        }
+        
+        .mydesigner-wrapper .element-item:active {
+            transform: translate3d(0, -1px, 0) !important;
+            transition: all 0.05s ease !important;
+        }
+        
+        /* CRITICAL FIXES: Performance-focused utility classes */
+        .mydesigner-wrapper .gpu-accelerated {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform !important;
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+        }
+        
+        .mydesigner-wrapper .smooth-transition {
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        
+        .mydesigner-wrapper .no-select {
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+        }
+        
+        .mydesigner-wrapper .performance-optimized {
+            contain: layout style paint !important;
+            will-change: auto !important;
+        }
+        
+        .mydesigner-wrapper .interaction-ready {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            touch-action: manipulation !important;
+        }
+        
+        .mydesigner-wrapper .force-visible {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 1000 !important;
+        }
+        
+        /* CRITICAL FIXES: Professional focus states */
+        .mydesigner-wrapper *:focus {
+            outline: 2px solid #3b82f6 !important;
+            outline-offset: 2px !important;
+        }
+        
+        .mydesigner-wrapper *:focus:not(:focus-visible) {
+            outline: none !important;
+        }
+        
+        /* CRITICAL FIXES: Professional hover states for touch devices */
+        @media (hover: none) {
+            .mydesigner-wrapper .design-elements-layer .design-element:hover,
+            .mydesigner-wrapper .area-tab:hover,
+            .mydesigner-wrapper .element-item:hover,
+            .mydesigner-wrapper .action-btn:hover,
+            .mydesigner-wrapper .text-add-btn:hover,
+            .mydesigner-wrapper .canvas-btn:hover,
+            .mydesigner-wrapper .zoom-btn:hover,
+            .mydesigner-wrapper .layer-item:hover {
+                transform: none !important;
+                box-shadow: none !important;
+            }
+        }
+        
+        /* CRITICAL FIXES: Professional responsive optimizations */
+        @media (max-width: 1200px) {
+            .mydesigner-wrapper .design-elements-layer .design-element {
+                transition: all 0.08s ease !important; /* Faster transitions on mobile */
+            }
+            
+            .mydesigner-wrapper .area-tab {
+                transition: all 0.08s ease !important;
+            }
+            
+            .mydesigner-wrapper .action-btn {
+                transition: all 0.08s ease !important;
+            }
+        }
+        
+        /* CRITICAL FIXES: Professional print styles */
+        @media print {
+            .mydesigner-wrapper .new-design-panel {
+                display: none !important;
+            }
+            
+            .mydesigner-wrapper .left-panel {
+                display: none !important;
+            }
+            
+            .mydesigner-wrapper .canvas-area {
+                width: 100% !important;
+                height: 100vh !important;
+            }
+        }
+        
+        /* CRITICAL FIXES: Loading and status indicators */
+        .mydesigner-wrapper .spinner {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform !important;
+            animation: spin 1s linear infinite !important;
+        }
+        
+        @keyframes spin {
+            from { transform: translate3d(0, 0, 0) rotate(0deg) !important; }
+            to { transform: translate3d(0, 0, 0) rotate(360deg) !important; }
+        }
+        
+        /* CRITICAL FIXES: Pulse animation for status indicators */
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1 !important;
+                transform: translate3d(0, 0, 0) scale(1) !important;
+            }
+            50% { 
+                opacity: 0.5 !important;
+                transform: translate3d(0, 0, 0) scale(1.05) !important;
+            }
+        }
+        
+        /* CRITICAL FIXES: Professional status indicator */
+        .mydesigner-wrapper .status-indicator {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: opacity, transform !important;
+            animation: pulse 2s infinite !important;
+        }
+        
+        /* CRITICAL FIXES: Professional selected indicator */
+        .mydesigner-wrapper .selected-indicator.active .indicator-dot {
+            transform: translate3d(0, 0, 0) !important;
+            will-change: opacity, transform !important;
+            animation: pulse 2s infinite !important;
+        }
+
+        /* IMMEDIATE FIX: Restore right panel functionality */
+        
+        /* CRITICAL FIX: Force all design elements to be fully interactive */
+        .mydesigner-wrapper .design-elements-layer .design-element {
+            /* CRITICAL FIX: Force visibility and positioning */
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: absolute !important;
+            z-index: 1000 !important;
+            /* CRITICAL FIX: Enhanced hardware acceleration */
+            transform: translate3d(0, 0, 0) !important;
+            will-change: transform, opacity, filter !important;
+            /* CRITICAL FIX: Prevent layout shifts */
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            /* CRITICAL FIX: Ensure full interaction */
+            pointer-events: auto !important;
+            cursor: grab !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            touch-action: none !important;
+            /* CRITICAL FIX: Force rendering */
+            contain: layout style paint !important;
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+        }
+        
+        /* CRITICAL FIX: Enhanced hover states for better interaction feedback */
+        .mydesigner-wrapper .design-elements-layer .design-element:hover {
+            transform: translate3d(0, -2px, 0) scale(1.02) !important;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15)) !important;
+            cursor: grabbing !important;
+            z-index: 1001 !important;
+        }
+        
+        /* CRITICAL FIX: Selected state for clear visual feedback */
+        .mydesigner-wrapper .design-elements-layer .design-element.selected {
+            transform: translate3d(0, -4px, 0) scale(1.05) !important;
+            filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3)) !important;
+            z-index: 1002 !important;
+            border: 2px solid #ef4444 !important;
+            border-radius: 4px !important;
+        }
+        
+        /* CRITICAL FIX: Active state during interaction */
+        .mydesigner-wrapper .design-elements-layer .design-element:active {
+            transform: translate3d(0, -1px, 0) scale(1.01) !important;
+            transition: all 0.05s ease !important;
+            cursor: grabbing !important;
+        }
+        
+        /* CRITICAL FIX: Resize and rotate handles */
+        .mydesigner-wrapper .design-elements-layer .design-element .resize-handle,
+        .mydesigner-wrapper .design-elements-layer .design-element .rotate-handle {
+            position: absolute !important;
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            z-index: 1003 !important;
+            pointer-events: auto !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            transition: all 0.2s ease !important;
+            opacity: 0.8 !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element .resize-handle {
+            bottom: -10px !important;
+            right: -10px !important;
+            background: #ef4444 !important;
+            color: white !important;
+            cursor: nw-resize !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element .rotate-handle {
+            top: -10px !important;
+            right: -10px !important;
+            background: #3b82f6 !important;
+            color: white !important;
+            cursor: pointer !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element .resize-handle:hover,
+        .mydesigner-wrapper .design-elements-layer .design-element .rotate-handle:hover {
+            opacity: 1 !important;
+            transform: scale(1.1) !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element .resize-handle:active,
+        .mydesigner-wrapper .design-elements-layer .design-element .rotate-handle:active {
+            transform: scale(0.95) !important;
+        }
+        
+        /* CRITICAL FIX: Show handles when element is selected */
+        .mydesigner-wrapper .design-elements-layer .design-element.selected .resize-handle,
+        .mydesigner-wrapper .design-elements-layer .design-element.selected .rotate-handle {
+            opacity: 1 !important;
+            display: flex !important;
+        }
+        
+        /* CRITICAL FIX: Hide handles when element is not selected */
+        .mydesigner-wrapper .design-elements-layer .design-element:not(.selected) .resize-handle,
+        .mydesigner-wrapper .design-elements-layer .design-element:not(.selected) .rotate-handle {
+            opacity: 0 !important;
+            display: none !important;
+        }
+        
+        /* CRITICAL FIX: Design controls container */
+        .mydesigner-wrapper .design-controls-container {
+            position: absolute !important;
+            top: 20px !important;
+            right: 20px !important;
+            width: 280px !important;
+            background: white !important;
+            border: 2px solid #ef4444 !important;
+            border-radius: 8px !important;
+            padding: 20px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+            z-index: 1000 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 15px !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        
+        /* CRITICAL FIX: Design controls sliders */
+        .mydesigner-wrapper .design-controls-container input[type="range"] {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            height: 6px !important;
+            border-radius: 3px !important;
+            background: #e5e7eb !important;
+            outline: none !important;
+            cursor: pointer !important;
+        }
+        
+        .mydesigner-wrapper .design-controls-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            width: 16px !important;
+            height: 16px !important;
+            border-radius: 50% !important;
+            background: #ef4444 !important;
+            cursor: pointer !important;
+            border: 2px solid white !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        .mydesigner-wrapper .design-controls-container input[type="range"]::-moz-range-thumb {
+            width: 16px !important;
+            height: 16px !important;
+            border-radius: 50% !important;
+            background: #ef4444 !important;
+            cursor: pointer !important;
+            border: 2px solid white !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* CRITICAL FIX: Design controls buttons */
+        .mydesigner-wrapper .design-controls-container button {
+            transition: all 0.2s ease !important;
+            font-weight: 500 !important;
+        }
+        
+        .mydesigner-wrapper .design-controls-container button:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .mydesigner-wrapper .design-controls-container button:active {
+            transform: translateY(0) !important;
+        }
+        
+        /* CRITICAL FIX: Design controls labels and values */
+        .mydesigner-wrapper .design-controls-container label {
+            font-weight: 500 !important;
+            color: #374151 !important;
+        }
+        
+        .mydesigner-wrapper .design-controls-container span {
+            font-weight: 600 !important;
+            color: #1f2937 !important;
+        }
+        
+        /* CRITICAL FIX: Design controls sections */
+        .mydesigner-wrapper .design-controls-container h3,
+        .mydesigner-wrapper .design-controls-container h4 {
+            margin: 0 !important;
+            font-weight: 700 !important;
+            color: #111827 !important;
+        }
+        
+        /* CRITICAL FIX: Enhanced right panel interaction */
+        .mydesigner-wrapper .design-elements-layer .design-element {
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element:hover {
+            transform: translate3d(0, -2px, 0) scale(1.02) !important;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15)) !important;
+            z-index: 1001 !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element.selected {
+            transform: translate3d(0, -4px, 0) scale(1.05) !important;
+            filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3)) !important;
+            z-index: 1002 !important;
+            border: 2px solid #ef4444 !important;
+            border-radius: 4px !important;
+        }
+        
+        /* CRITICAL FIX: Force design panel visibility and interaction */
+        .mydesigner-wrapper .new-design-panel {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 1000 !important;
+            position: relative !important;
+            /* CRITICAL FIX: Ensure panel is interactive */
+            pointer-events: auto !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            /* CRITICAL FIX: Force rendering */
+            contain: layout style paint !important;
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+        }
+        
+        /* CRITICAL FIX: Force design elements layer visibility and interaction */
+        .mydesigner-wrapper .design-elements-layer {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+            z-index: 100 !important;
+            /* CRITICAL FIX: Ensure layer is interactive */
+            pointer-events: auto !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            /* CRITICAL FIX: Force rendering */
+            contain: layout style paint !important;
+            backface-visibility: hidden !important;
+            perspective: 1000px !important;
+        }
+        
+        /* IMMEDIATE FIX: Force preview canvas visibility */
+        .mydesigner-wrapper #designPreviewCanvas {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 50 !important;
+        }
+        
+        /* IMMEDIATE FIX: Force design panel visibility */
+        .mydesigner-wrapper #designPanel {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 1000 !important;
+        }
+        
+        /* CRITICAL FIX: Interactive design elements */
+        .mydesigner-wrapper .design-elements-layer .design-element.interactive-design-element {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            touch-action: none !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 1000 !important;
+            position: absolute !important;
+            transform: translate3d(0, 0, 0) !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element.interactive-design-element:hover {
+            transform: translate3d(0, -2px, 0) scale(1.02) !important;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15)) !important;
+            cursor: pointer !important;
+            z-index: 1001 !important;
+        }
+        
+        .mydesigner-wrapper .design-elements-layer .design-element.interactive-design-element.selected {
+            transform: translate3d(0, -4px, 0) scale(1.05) !important;
+            filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3)) !important;
+            z-index: 1002 !important;
+            border: 2px solid #ef4444 !important;
+            border-radius: 4px !important;
+        }
+        
+        /* CRITICAL FIX: Design properties panel */
+        .mydesigner-wrapper .design-properties-panel {
+            position: absolute !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            width: 280px !important;
+            background: white !important;
+            border: 2px solid #3b82f6 !important;
+            border-radius: 8px !important;
+            padding: 20px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+            z-index: 1000 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 15px !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        
+        /* CRITICAL FIX: Quick controls styling */
+        .mydesigner-wrapper .design-properties-panel .quick-controls input[type="range"] {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            height: 6px !important;
+            border-radius: 3px !important;
+            background: #e5e7eb !important;
+            outline: none !important;
+            cursor: pointer !important;
+        }
+        
+        .mydesigner-wrapper .design-properties-panel .quick-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            width: 16px !important;
+            height: 16px !important;
+            border-radius: 50% !important;
+            background: #3b82f6 !important;
+            cursor: pointer !important;
+            border: 2px solid white !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        .mydesigner-wrapper .design-properties-panel .quick-controls button {
+            transition: all 0.2s ease !important;
+            font-weight: 500 !important;
+        }
+        
+        .mydesigner-wrapper .design-properties-panel .quick-controls button:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .mydesigner-wrapper .design-properties-panel .quick-controls button:active {
+    transform: translateY(0) !important;
+}
+
+/* CRITICAL FIX: Force all design elements to be interactive */
+.mydesigner-wrapper .design-element {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    touch-action: none !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1000 !important;
+    position: absolute !important;
+    transform: translate3d(0, 0, 0) !important;
+    transition: all 0.2s ease !important;
+}
+
+.mydesigner-wrapper .design-element:hover {
+    transform: translate3d(0, -2px, 0) scale(1.02) !important;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15)) !important;
+    cursor: pointer !important;
+    z-index: 1001 !important;
+}
+
+.mydesigner-wrapper .design-element.selected {
+    transform: translate3d(0, -4px, 0) scale(1.05) !important;
+    filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3)) !important;
+    z-index: 1002 !important;
+    border: 2px solid #ef4444 !important;
+    border-radius: 4px !important;
+}
+
+/* CRITICAL FIX: Force design elements layer to be interactive */
+.mydesigner-wrapper .design-elements-layer {
+    pointer-events: auto !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    touch-action: none !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+}
+
+/* CRITICAL FIX: Force design panel to be interactive */
+.mydesigner-wrapper .new-design-panel {
+    pointer-events: auto !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    touch-action: none !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1000 !important;
+}
+
+/* CRITICAL FIX: Force all elements in design studio to be interactive */
+.mydesigner-wrapper .design-elements-layer * {
+    pointer-events: auto !important;
+}
+
+.mydesigner-wrapper .design-elements-layer .design-element * {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* CRITICAL FIX: Force images inside design elements to be clickable */
+.mydesigner-wrapper .design-element img {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    touch-action: none !important;
+}
+
+/* CRITICAL FIX: Ensure design elements layer is always interactive */
+.mydesigner-wrapper .design-elements-layer {
+    pointer-events: auto !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    touch-action: none !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    position: relative !important;
+}
+
+/* CRITICAL FIX: Force all design elements to be interactive with higher specificity */
+.mydesigner-wrapper .design-elements-layer .design-element,
+.mydesigner-wrapper .design-elements-layer .design-element.interactive-design-element {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    touch-action: none !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1000 !important;
+    position: absolute !important;
+    transform: translate3d(0, 0, 0) !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.mydesigner-wrapper .design-elements-layer .design-element:hover,
+.mydesigner-wrapper .design-elements-layer .design-element.interactive-design-element:hover {
+    transform: translate3d(0, -2px, 0) scale(1.02) !important;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15)) !important;
+    cursor: pointer !important;
+    z-index: 1001 !important;
+}
+
+            .mydesigner-wrapper .design-elements-layer .design-element.selected,
+            .mydesigner-wrapper .design-elements-layer .design-element.interactive-design-element.selected {
+                transform: translate3d(0, -4px, 0) scale(1.05) !important;
+                filter: drop-shadow(0 12px 24px rgba(239, 68, 68, 0.3)) !important;
+                z-index: 1002 !important;
+                border: 2px solid #ef4444 !important;
+                border-radius: 4px !important;
+            }
+            
+            /* SIMPLE FIX: Basic design element styles */
+            .mydesigner-wrapper .design-elements-layer .design-element {
+                position: absolute;
+                pointer-events: auto;
+                cursor: pointer;
+                user-select: none;
+                display: block;
+                visibility: visible;
+                opacity: 1;
+                z-index: 1000;
+                transition: all 0.2s ease;
+            }
+            
+            .mydesigner-wrapper .design-elements-layer .design-element:hover {
+                transform: scale(1.02);
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            }
+            
+            .mydesigner-wrapper .design-elements-layer .design-element img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                pointer-events: auto;
+            }
+            
+            /* Simple controls panel */
+            .simple-controls {
+                position: absolute;
+                bottom: 20px;
+                right: 20px;
+                background: white;
+                border: 2px solid #3b82f6;
+                border-radius: 8px;
+                padding: 15px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1001;
+                min-width: 200px;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
+            
+            .simple-controls input[type="range"] {
+                width: 100%;
+                height: 6px;
+                border-radius: 3px;
+                background: #e5e7eb;
+                outline: none;
+                cursor: pointer;
+                -webkit-appearance: none;
+                appearance: none;
+            }
+            
+            .simple-controls input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #3b82f6;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .simple-controls input[type="range"]::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #3b82f6;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .simple-controls button {
+                transition: all 0.2s ease;
+                border: none;
+                font-weight: 500;
+            }
+            
+            .simple-controls button:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .simple-controls button:active {
+                transform: translateY(0);
+                box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            }
+            
+
+            
+            /* Simple right panel design elements */
+            .design-element-right-panel {
+                position: relative;
+                width: 100%;
+                height: 80px;
+                background: white;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                margin-bottom: 10px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            
+            .design-element-right-panel:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border-color: #3b82f6;
+            }
+            
+            .design-element-right-panel.selected {
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            }
+            
+            .design-element-right-panel .design-image {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f9fafb;
+            }
+            
+            .design-element-right-panel .design-info {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 4px 8px;
+                font-size: 11px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .design-element-right-panel .design-name {
+                font-weight: 500;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 60%;
+            }
+            
+            .design-element-right-panel .design-size {
+                font-weight: 600;
+                color: #3b82f6;
+            }
+            
+            .design-element-right-panel .design-controls {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                display: flex;
+                gap: 4px;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+            
+            .design-element-right-panel:hover .design-controls {
+                opacity: 1;
+            }
+            
+            .design-element-right-panel .control-btn {
+                width: 24px;
+                height: 24px;
+                border: none;
+                border-radius: 50%;
+                background: white;
+                color: #374151;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .design-element-right-panel .control-btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+            
+            .design-element-right-panel .control-btn.edit-btn:hover {
+                background: #3b82f6;
+                color: white;
+            }
+            
+            .design-element-right-panel .control-btn.delete-btn:hover {
+                background: #ef4444;
+                color: white;
+            }
